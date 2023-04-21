@@ -1,0 +1,634 @@
+syntax = "proto3";
+package fp2;
+
+option go_package =	"github.com/wtiger001/fp2server/common";
+
+message Fp2Message {
+    string MessageID = 1;
+    string RespondingToID = 2;
+    string Sender = 3;
+    oneof Data {
+        Character                   Character                   = 5;
+        Attack                      Attack                      = 6;
+        AttackResult                AttackResult                = 7;
+        DefenseChallenge            DefenseChallenge            = 8;
+        DefenseChallengeResponse    DefenseChallengeResponse    = 9;
+        ReferenceRequest            ReferenceRequest            = 10;
+        ReferenceResponse           ReferenceResponse           = 11;
+        UpdateRequest               UpdateRequest               = 12;
+    }
+}
+
+// Represents a Character
+message Character {
+    string ID                                   = 1;
+    string Name                                 = 2;
+    CharacterMetadata Metadata                  = 3;
+    CharacterOptions Options                    = 4;
+    CharacterAttributes Attributes              = 5;
+    CharacterHealth Health                      = 6;
+    repeated Skill Skills                       = 7;
+    repeated Weapon Weapons                     = 8;
+    repeated Armor Armors                       = 9;
+    repeated Affinty Affinities                 = 10;
+    repeated Orb Orbs                           = 11;
+}
+
+message Affinty {
+    string School = 1;
+    int32 Points = 2;
+}
+
+enum AttributeAllocationMethod {
+    AttributeAllocationMethod_UNK = 0;
+    AttributeAllocationMethod_Roo = 1;
+    AttributeAllocationMethod_Point50 = 2;
+    AttributeAllocationMethod_Point60 = 3;
+    AttributeAllocationMethod_Point70 = 4;
+    AttributeAllocationMethod_Maunal = 5;
+}
+
+message CharacterCreation {
+    AttributeAllocationMethod AttributeAllocationMethod = 1;
+    int32 AttributePointsRemaining = 2;
+    int32 SkillPoints = 3;
+    int32 SkillPointsRemaining = 4;
+    MonetaryAmount StartingMoney = 5;
+    int32 AffinityPoints = 6;
+    int32 AffinityPointsRemaining = 7;
+}
+
+message CharacterMetadata  {
+    string PlayerName = 1;
+    string Backstory = 2;
+    string Height = 3;
+    string Weight = 4;
+    string Race = 5;
+    string EyeColor = 6;
+    string HairColor = 7;
+}
+
+message Game {
+    string ID = 1;
+    string Name = 2;
+}
+
+message GameSession {
+    DiceRollLog DiceLog = 1;
+    ChatLog ChatLog = 2;
+}
+
+message ChatLog {
+    repeated DiceRollResults Rolls = 1;
+}
+
+message DiceRollLog {
+    repeated DiceRollResults Rolls = 1;
+}
+
+message Encounter {
+    string ID                                   = 1;
+    string Name                                 = 2;
+    bool Active                                 = 3;
+    int32 CurrentTurn                           = 4;
+    int32 CurrentEntity                         = 5;
+    repeated InitiativeOrder InitiativeOrders   = 6;
+    repeated EntityReference Entities           = 7;
+}
+
+enum EntityType {
+    EntityType_Unknown   = 0;
+    EntityType_Character = 1;
+    EntityType_Creature  = 2;
+    EntityType_Other     = 3;
+}
+
+message EntityReference {
+    string ID = 1;
+    EntityType Type = 2;
+}
+
+message InitiativeOrder {
+    string EntityID      = 1;
+    int32 InitiativeRoll = 3;
+}
+
+message ChallengeDiceRoll {
+    string ID = 1;
+    string ChallengeType = 2;
+    string RollRequested = 3;
+    string Text = 4;
+}
+
+message ChallengeDiceRollResult {
+    string ChallengeID = 1;
+    string Result = 2;
+}
+
+message PlayerOptions {
+
+}
+
+message CharacterOptions {
+    bool RollMyOwnDice = 1;
+}
+
+enum PrimaryAttributeVal {
+    PrimaryAttributeVal_UNK = 0;
+    PrimaryAttributeVal_BOD =  1;
+    PrimaryAttributeVal_WILL  = 2;
+    PrimaryAttributeVal_REF =  3;
+    PrimaryAttributeVal_VIT =  4;
+    PrimaryAttributeVal_INT =  5;
+    PrimaryAttributeVal_LUCK  = 6;
+    PrimaryAttributeVal_TECH  = 7;
+    PrimaryAttributeVal_ATTR  = 8;
+    PrimaryAttributeVal_ESS =  9;
+    PrimaryAttributeVal_PER =  10;
+}
+
+message CharacterAttributes {
+    PrimaryAttribute BOD = 1;
+    PrimaryAttribute WILL = 2;
+    PrimaryAttribute REF = 3;
+    PrimaryAttribute VIT = 4;
+    PrimaryAttribute INT = 5;
+    PrimaryAttribute LUCK = 6;
+    PrimaryAttribute TECH = 7;
+    PrimaryAttribute ATTR = 8;
+    PrimaryAttribute ESS = 9;
+    PrimaryAttribute PER = 10;
+   
+    ConsumableAttribute Mana = 11;
+    ConsumableAttribute Stamina = 12;
+
+    CalculatedValue Initiative = 13;
+    CalculatedValue Awarness = 14;
+}
+
+message PrimaryAttribute {
+    int32 RawValue = 2;
+    int32 SetValue = 3;
+    int32 CalcValue = 4;
+}
+
+message ConsumableAttribute {
+    int32 MaxValue = 1;
+    int32 SetValue = 2;
+    float RegenPerRound = 3;
+    float RegenPerMinute = 4;
+}
+
+message CalculatedValue {
+    int32 Value = 1;
+}
+
+enum AttackType {
+    AttackType_Unknown = 0;
+    AttackType_Melee = 1;
+    AttackType_Ranged = 2;
+}
+
+message Attack {
+    string Attacker  = 1;
+    string Target    = 2;
+    AttackType AttackType = 3;
+    string Description = 4;
+    string Weapon = 5;
+}
+
+message AttackResult {
+    Attack Attack = 1;
+    DefenseOption Defense = 2;
+    int32 AttackTotal = 3; // Need to put a dice result in here? 
+    int32 DefenseTotal = 4; // Need to put a dice result in here? 
+    int32 AttackDamage = 5; // Need to put a dice result in here? 
+    int32 ShieldSP = 6;
+    int32 ArmorSP = 7;
+    bool ShieldDamaged = 8;
+    bool ArmorDamaged = 9;
+    int32 DamageInflicted = 10;
+}
+
+message DefenseChallenge {
+    Attack Attack = 1;
+    repeated DefenseOption DefenseOptions = 2;
+}
+
+message DefenseChallengeResponse {
+    DefenseChallenge Challenge = 1;
+    DefenseOption Choice = 2;
+}
+
+enum DefenseType {
+    Unknown   = 0;
+    None      = 1;
+    Dodge     = 2;
+    Block     = 3;
+    Parry     = 4;
+}
+
+message DefenseOption {
+    DefenseType DefenseType = 1;
+    string DefenseItem = 2;
+    string Description = 3;
+    int32  DefenseTotal = 4;
+}
+
+
+enum WoundState {
+    WoundState_Unknown   = 0;
+    WoundState_None      = 1;
+    WoundState_Light     = 2;
+    WoundState_Serious   = 3;
+    WoundState_Critical  = 4;
+    WoundState_Mortal    = 5;
+}
+
+message CharacterHealth {
+    int32 LightLevels = 1;
+    int32 SeriousLevels = 2;
+    int32 CriticalLevels = 3;
+    int32 MortalLevels = 4;
+    int32 CurrentWounds = 5;
+    WoundState CurrentWoundState = 6;
+    int32 MortalN = 7;
+}
+
+message Skill {
+    string ID   = 1;
+    int32 Level = 2;
+    int32 IPs   = 3;
+    int32 Mod   = 4;
+    int32 Total = 5;
+}
+
+message CalculatedCharacterSkill {
+    Skill  Skill = 1;
+    int32           AttrBase  = 2;
+    int32           Mods = 3;
+    int32           Value = 4;
+}
+
+message RefSkill {
+    string ID = 1;
+    string Name = 2;
+    string Description = 3;
+    PrimaryAttributeVal AttributeType = 4;
+    string Restrictions = 5;
+    repeated Ability Abilities = 6;
+}
+
+message Ability {
+    string ID = 1;
+    string Name = 2;
+    string Description = 3;
+    string SkillLevelUnlock = 4;
+
+    // How to model cost
+    bool CanAttackWith = 5; // How to model attack, need to include i ions (attack type, skill used)
+    bool CanDefendWith = 6; // How to model defense
+}
+
+enum Rarity {
+    Rarity_UNK = 0;
+    Rarity_COMMON = 1;
+    Rarity_UNCOMMON = 2;
+    Rarity_RARE = 3;
+    Rarity_LEGONDARY = 4;
+    Rarity_MYTHIC = 5;
+    Rarity_OTHER = 6;
+}
+
+enum BooleanValue {
+    BooleanValue_UNK = 0;
+    BooleanValue_False = 1;
+    BooleanValue_True = 2;
+}
+
+enum MonetaryDenomination {
+    MonetaryDenomination_UNK = 0;
+    MonetaryDenomination_CP = 1;
+    MonetaryDenomination_SP = 2;
+    MonetaryDenomination_GP = 3;
+    MonetaryDenomination_PP = 4;
+    MonetaryDenomination_OTHER = 5;
+}
+
+message MonetaryAmount {
+    int32 CP = 1;
+    int32 SP = 2;
+    int32 GP = 3;
+    int32 PP = 4;
+}
+
+message IconPicture {
+    string Icon = 1;
+    string Picture = 2;
+}
+
+message RefWeapon {
+    string ID = 1;
+    string Name = 2;
+    string Description = 3;
+    string Damage1H = 4;
+    string Damage2H = 5;
+    int32 BaseWeaponAccuracy = 6;
+    int32 DefenseModifier = 7;
+    DefenseType DefenseType = 8;
+    MonetaryAmount Cost = 9;
+    Rarity Rarity = 10;
+    int32 RangeFt = 11;
+    string RequiredSkill = 12;
+    bool Melee = 13;
+    bool Ranged = 15;
+    bool Wield1Hand = 16;
+    bool Wield2Hand = 17;
+    IconPicture Picture = 18;
+    bool CanBlock = 19;
+    bool CanParry = 20;
+    int32 ParryMod = 21;
+    int32 BlockMod = 22;
+    int32 BlockSP = 23;
+    bool CanDegrade = 24;
+    repeated Modification Modifications = 25;
+}
+
+enum GameTermType {
+    GameTermType_UNK = 0;
+    GameTermType_Rarity = 1;
+    GameTermType_Weapon_Quality = 2;
+    GameTermType_Monetary_Denomintation = 3;
+    GameTermType_Wound_state = 4;
+}
+
+message RefGameTerm {
+    string ID = 1;
+    string Name = 2;
+    string Description = 3;
+    string Type = 4;
+    int32  EnumValue = 5; // Value of the Enum (like Rarity)
+}
+
+enum Quality {
+    Quality_UNK = 0;
+    Quality_Trash = 1;
+    Quality_Poor = 2;
+    Quality_Standard = 3;
+    Quality_Master = 4;
+    Quality_Magic = 5;
+    Quality_Artifact = 6;
+}
+
+message Weapon {
+    string ID = 1;
+    string Name = 2; // CUstom Name
+    string Notes = 3;
+    string RefID = 4;
+    Quality Quality = 5;
+    IconPicture Picture = 6;
+    bool Carried = 7;
+    bool Equipped = 8;
+    int32 ParryMod = 9;
+    int32 BlockMod = 10;
+    int32 BlockSP = 11;
+    int32 WeaponAccuracy = 13;
+    bool Degraded = 14;
+    repeated Modification Modifications = 15;
+}
+
+message RefArmor {
+    string ID = 1;
+    string Name = 2;
+    string Description = 3;
+    int32 SP = 4;
+    bool CanDegrade = 5;
+    string Material = 6;
+    MonetaryAmount Cost = 7;
+    bool CanStack = 8;
+    int32 RefPenalty = 9;
+    repeated Modification Modifications = 10;
+}
+
+message Armor {
+    string ID = 1;
+    string Name = 2; // CUstom Name
+    string Notes = 3;
+    string RefID = 4;
+    IconPicture Picture = 6;
+    bool Equipped = 8;
+    bool Degraded = 9;
+    int32 SP = 10;
+    Quality Quality = 11;
+    BooleanValue CanDegrade = 12;
+    repeated Modification Modifications = 13;
+}
+
+message DiceRollResults  {
+	repeated DiceRollResult Rolls = 1;
+	int32 Total = 2;
+    repeated RollModifier Modifiers = 3;
+}
+
+message DiceRollResult  {
+	Die Dice = 3;
+	repeated DieRollResult Results = 2;
+}
+
+message DieRollResult  {
+	int32  Value    = 1;
+	bool Exploded = 2;
+	bool ReRolled = 3;
+}
+
+message DiceRoll  {
+	repeated Die Dice = 1;
+    repeated RollModifier Modifiers = 2;
+}
+
+message Die  {
+	int32 Amount   = 1;
+	int32 Sides     = 2;
+	bool Explode   = 3;
+	bool ReRollMin = 4;
+	string Tag     = 5;
+}
+
+message RollModifier  {
+	int32 Modifier = 1;
+	string Tag     = 2;
+	bool Multiply  = 3;
+	bool Divide    = 4;
+}
+
+enum ActionType {
+    ActionType_Unknown = 0;
+    ActionType_Standard = 1;
+    ActionType_Defensive_Reaction = 2;
+}
+
+message PerformAction {
+    oneof Action {
+        Attack Attack = 1;
+    }
+    ActionType ActionType = 2;
+    int32 Actions = 3;
+    string CharacterID = 4;
+}
+
+enum ReferenceType {
+    ReferenceType_Unknown = 0;
+    ReferenceType_Skill = 1;
+    ReferenceType_Ability = 2;
+    ReferenceType_GameTerm = 3;
+    ReferenceType_Weapon = 4;  
+}
+
+// Message Request for a piece of reference information
+message ReferenceRequest {
+    ReferenceType Type = 1;
+    string ID = 2;
+}
+
+message ReferenceResponse {
+    oneof Reference {
+        RefSkill Skill = 1;
+        RefGameTerm GameTerm = 3;
+        RefWeapon Weapon = 4;       
+    }
+}
+
+enum ModificationType {
+    MT_UNK = 0;
+    
+    MT_WoundLevelsLight = 1;
+    MT_WoundLevelsSerious = 2;
+    MT_WoundLevelsCritical = 3;
+    MT_WoundLevelsMortal = 4;
+
+    MT_AttributeBOD = 6;
+    MT_AttributeWILL = 7;
+    MT_AttributeREF = 8;
+    MT_AttributeVIT = 9;
+    MT_AttributeINT = 10;
+    MT_AttributeLUCK = 11;
+    MT_AttributeTECH = 12;
+    MT_AttributeATTR = 13;
+    MT_AttributeESS = 14;
+    MT_AttributePER = 15;
+
+    MT_AttributeTempBOD = 16;
+    MT_AttributeTempWILL = 17;
+    MT_AttributeTempREF = 18;
+    MT_AttributeTempVIT = 19;
+    MT_AttributeTempINT = 20;
+    MT_AttributeTempLUCK = 21;
+    MT_AttributeTempTECH = 22;
+    MT_AttributeTempATTR = 23;
+    MT_AttributeTempESS = 24;
+    MT_AttributeTempPER = 25;
+
+    MT_Mana = 26;
+    MT_ManaRegen = 27;
+    MT_Stamina = 28;
+    MT_StaminaRegen = 29;
+    MT_Initiative = 30;
+    MT_Awarness = 31;
+    
+    MT_Mana_Temp = 32;
+    MT_ManaRegen_Temp = 33;
+    MT_Stamina_Temp = 34;
+    MT_StaminaREgen_Temp = 35;
+    MT_Initiative_Temp = 36;
+    MT_Awarness_Temp = 37;
+
+    MT_Skill = 50;
+}
+
+message Modification {
+    ModificationType Type = 1;
+    int32            Amount = 2;
+    string           Category = 3;
+    string           IDAffected = 4;
+}
+
+enum UpdateType {
+    UT_Save     = 0;
+    UT_Delete   = 1;
+}
+
+// Used to send multuple updates. Batched updates will delay the calculaiion
+// process until all updates have been saved and there will be only a single
+// update per affected object instead of possibly n updates. It is possible
+// to include the same object multiple times. In that case the last object
+// instance will be the one that gets saved. No attempt at patching with 
+// this approach
+message BatchUpdateRequest {
+    repeated UpdateRequest Updates = 2;
+}
+
+// Sent from the Client to the Server when the client has made a change
+// This may be too general, but is good for now. No attempt at patching with 
+// this approach
+message UpdateRequest {
+    UpdateType Type = 5;
+    oneof Data {
+        // References (not meant to be uodated during a game)
+        RefArmor                    RefArmor                    = 7;
+        RefGameTerm                 RefGameTerm                 = 8;
+        RefSkill                    RefSkill                    = 9;
+        RefWeapon                   RefWeapon                   = 10;
+
+        // Entities
+        Character                   Character                   = 50;
+        Encounter                   Encounter                   = 51;
+    }
+}
+
+// Sent to the Client when a model has changed. This is either from 
+// a save or from a calculation. No attempt at patching with 
+// this approach
+message ModelChangedEvent {
+    UpdateType Type = 5;
+    oneof Data {
+        // References (not meant to be uodated during a game)
+        RefArmor                    RefArmor                    = 7;
+        RefGameTerm                 RefGameTerm                 = 8;
+        RefSkill                    RefSkill                    = 9;
+        RefWeapon                   RefWeapon                   = 10;
+
+        // Entities
+        Character                   Character                   = 50;
+        Encounter                   Encounter                   = 51;
+    }
+}
+
+
+message Orb {
+    string ID = 1;
+    string Name = 2;
+    string Notes = 3;
+    string RefID = 4;
+    int32 Level = 5;
+    int32 IPs = 6;
+    bool slotted = 7;
+}
+
+enum OrbType {
+    OrbType_Unk = 0;
+    OrbType_Spell = 1;
+    OrbType_Summon = 2;
+    OrbType_Enhancement = 3;
+}
+
+message RefOrb {
+    string ID = 1;
+    string Name = 2;
+    string Description = 3;
+    OrbType Type = 4;
+    Rarity Rarity = 5;
+    IconPicture Picture = 6;
+    PrimaryAttributeVal SpellAttributeType = 7;
+    string SpellSchool = 8;
+    repeated Ability Abilities = 1100;
+}
