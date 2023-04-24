@@ -2,7 +2,6 @@ package common
 
 import (
 	"fmt"
-	"math/rand"
 	"strings"
 )
 
@@ -57,8 +56,7 @@ func RollD10() *DiceRollResults {
 }
 
 func RollOnce(sides int32) int32 {
-	val := rand.Intn(int(sides)-1) + 1
-	return int32(val)
+	return Random1(sides)
 }
 
 func (d *DiceRoll) Roll() *DiceRollResults {
@@ -129,19 +127,19 @@ func (d *DiceRoll) AppendMod(tag string, mod int32) {
 }
 
 func (d *DiceRoll) FindModifier(tag string) int32 {
-	for _, m := d.Modifiers {
+	for _, m := range d.Modifiers {
 		if m.Tag == tag {
-			return m.Value
+			return m.Modifier
 		}
 	}
-	return 0;
+	return 0
 }
 
 func (d *DiceRollResults) FindModifier(tag string) int32 {
-	for _, m := d.Modifiers {
+	for _, m := range d.Modifiers {
 		if m.Tag == tag {
-			return m.Value
+			return m.Modifier
 		}
 	}
-	return 0;
+	return 0
 }

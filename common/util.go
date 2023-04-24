@@ -3,6 +3,7 @@ package common
 import (
 	"crypto/rand"
 	"encoding/binary"
+	"math"
 	"sync"
 	"time"
 
@@ -100,10 +101,20 @@ func Clone[T proto.Message](obj T) T {
 	return proto.Clone(obj).(T)
 }
 
-func Random64() int64 {
+func Random64() uint64 {
 	var b [8]byte
 	if _, err := rand.Read(b[:]); err != nil {
 		return 0
 	}
-	return int64(binary.LittleEndian.Uint64(b[:]))
+	return binary.LittleEndian.Uint64(b[:])
+}
+
+func Random1(n int32) int32 {
+	num := Random64()
+	val2 := (float64(num) / float64(math.MaxUint64) * float64(n)) + 1
+	if val2 > float64(n) {
+		return n
+	}
+	val3 := math.Round(val2)
+	return int32(val3)
 }

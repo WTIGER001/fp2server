@@ -10,16 +10,18 @@ import (
 func (e *Encounter) RollInititative() {
 	// Roll the initatives
 	var orders []*InitiativeOrder
-	for i, entityRef := range e.Entities {
+	for _, entityRef := range e.Entities {
 		// Look up the correct entity
 		entity := e.GetEntity(e.ID)
+
 		// Get the raw value
 		raw := entity.Attributes.Initiative.Value
+
 		// Roll the initative dice
 		dice := Clone(InitiativeDice)
 		dice.AppendMod("Initiative", raw)
 		result := Roll(dice)
-		// Add to temp
+
 		orders = append(orders, &InitiativeOrder{
 			EntityID:        entityRef.ID,
 			Value:           result.Total,
@@ -27,10 +29,12 @@ func (e *Encounter) RollInititative() {
 		})
 	}
 
-	// Sort the initative rolls
+	// Sort the initative rolls so the larger
+	// initative values are at the top
 	sort.Slice(orders, func(i, j int) bool {
 		o1 := orders[i]
 		o2 := orders[j]
+
 		return InitativeOrderLess(o1, o2)
 	})
 
@@ -44,42 +48,44 @@ func (e *Encounter) RollInititative() {
 }
 
 func InitativeOrderLess(o1 *InitiativeOrder, o2 *InitiativeOrder) bool {
+	// We want the larger number to go to the beginning
+
 	// Level 1
-	if o1.Value < o2.Value {
+	if o1.Value > o2.Value {
 		return true
 	}
-	if o1.Value > o2.Value {
+	if o1.Value < o2.Value {
 		return false
 	}
 
 	// Level 2, base values
 	b1 := o1.DiceRollResults.FindModifier("Initiative")
 	b2 := o2.DiceRollResults.FindModifier("Initiative")
-	if b1 < b2 {
+	if b1 > b2 {
 		return true
 	}
-	if b1 > b2 {
+	if b1 < b2 {
 		return false
 	}
 
 	// Level3, Luck?
 	// TBD : Add luck here
 
-	// Level 4: Random
+	// Level 4: Random.. just keep trying until there is a result!!!
 	for {
 		r1 := Random64()
 		r2 := Random64()
-		if r1 < r2 {
+		if r1 > r2 {
 			return true
 		}
-		if r1 > r2 {
+		if r1 < r2 {
 			return false
 		}
 	}
 }
 
 func (e *Encounter) GetEntity(id string) *Character {
-	entity, _ := ActiveGame.Characters().Get(o.EntityID)
+	entity, _ := ActiveGame.Characters().Get(id)
 	return entity
 }
 
@@ -140,8 +146,13 @@ func (e *Encounter) BuildNextRound() {
 	e.Rounds = append(e.Rounds, round)
 }
 
+// Remove all effects that are expired.
+// Not sure how we are tracking active effects
+// Likely at the "character" level. Also not
+// sure how "short term / combat" effects are tracked from
+// a time perspective. Effects are generally Buffs / Debuffs / etc
 func (e *Encounter) ExpireEffects() {
-
+	//TODO:
 }
 
 // Records a reaction from a character in the
@@ -154,7 +165,7 @@ func (e *Encounter) CharacterReact(id string) bool {
 	// count the defensive reactions used in this turn
 	// if there are any remaining then use them
 	entity := e.GetEntity(id)
-	round := e.GetCurrentRound()
+	round := e.GetRound()
 	defensiveReactionsUsed := 0
 	for _, dr := range round.DefensiveReactions {
 		if dr.EntityID == id {
@@ -194,7 +205,7 @@ func (e *Encounter) CharacterReact(id string) bool {
 	return false
 }
 
-func (e *Encounter) GetCurrentRound() *Round {
+func (e *Encounter) GetRound() *Round {
 	if len(e.Rounds) == 0 {
 		return nil
 	}
