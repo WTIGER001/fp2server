@@ -9,6 +9,6 @@ func (a *Armor) CanDegradeDefault() bool {
 		return false
 	}
 
-	armorRef := References.Armors.Get(a.RefID)
+	armorRef, _ := References.Armors.Get(a.RefID)
 	return armorRef.CanDegrade
 }

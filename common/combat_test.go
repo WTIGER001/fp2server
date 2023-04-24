@@ -10,6 +10,17 @@ func TestAttack1(t *testing.T) {
 	tu := &TestUtil{}
 	Storage = &ReadOnlyStorage{s: Storage}
 
+	g1 := &Game{
+		ID:   "my-cool-game",
+		Name: "TEST",
+		Players: []*Player{
+			{Id: "john", Name: "John", GM: true},
+			{Id: "par", Name: "Par Soulati"},
+			{Id: "tim", Name: "tim"},
+		},
+	}
+	ActiveGame = g1
+
 	c1 := &Character{
 		ID:         GenerateID(),
 		Attributes: tu.Attributes(7),
@@ -24,8 +35,10 @@ func TestAttack1(t *testing.T) {
 		Skills:     []*Skill{tu.BladedWeaponsSkill()},
 		Armors:     []*Armor{tu.BreastPlate()},
 	}
-	References.Characters.Set(c1, c1.ID)
-	References.Characters.Set(c2, c2.ID)
+
+	Games.Set(g1, g1.ID)
+	g1.Characters().Set(c1, c1.ID)
+	g1.Characters().Set(c2, c2.ID)
 
 	cp := &CombatProcessor{}
 	attack := &Attack{

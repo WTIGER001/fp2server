@@ -6,7 +6,7 @@ func (c *Character) UseSkill(ID string) int32 {
 
 	roll := RollD10()
 	d10 := roll.Rolls[0].Results[0].Value
-	refSkill := References.Skills.Get(ID)
+	refSkill, _ := References.Skills.Get(ID)
 	if refSkill == nil {
 		return -1
 	}
@@ -36,7 +36,7 @@ func (c *Character) GetWoundState() WoundState {
 
 func (c *Character) GetCurrentSkillTotal(ID string) int32 {
 	// Look for the Skill
-	refSkill := References.Skills.Get(ID)
+	refSkill, _ := References.Skills.Get(ID)
 	if refSkill == nil {
 		return 0
 	}

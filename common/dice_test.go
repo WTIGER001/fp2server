@@ -24,6 +24,6 @@ func TestDiceRoll(t *testing.T) {
 	r := d.Roll()
 	f := d.Format()
 
-	assert.Greater(t, 0, r.Total)
+	assert.Greater(t, r.Total, int32(0))
 	assert.NotEmpty(t, f)
 }

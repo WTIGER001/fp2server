@@ -1,4 +1,4 @@
-package server
+package main
 
 import (
 	"flag"
@@ -8,6 +8,17 @@ import (
 	"github.com/gorilla/websocket"
 )
 
+func main() {
+	mp = NewMessageProcessor()
+	flag.Parse()
+	log.SetFlags(0)
+	http.HandleFunc("/ws", process)
+	http.HandleFunc("/", home)
+	log.Println("Started")
+	log.Fatal(http.ListenAndServe(*addr, nil))
+}
+
+var mp *MessageProcessor
 var addr = flag.String("addr", "localhost:8080", "http service address")
 
 type Fp2Server struct {
@@ -17,36 +28,17 @@ var upgrader = websocket.Upgrader{
 	CheckOrigin: func(r *http.Request) bool { return true },
 }
 
-func echo(w http.ResponseWriter, r *http.Request) {
+func process(w http.ResponseWriter, r *http.Request) {
 	c, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		log.Print("upgrade:", err)
 		return
 	}
 	defer c.Close()
-	for {
-		mt, message, err := c.ReadMessage()
-		if err != nil {
-			log.Println("read:", err)
-			break
-		}
-		log.Printf("recv: %s", message)
-		err = c.WriteMessage(mt, message)
-		if err != nil {
-			log.Println("write:", err)
-			break
-		}
-	}
+	mp.HandleNewConnection(c)
 }
 
 func home(w http.ResponseWriter, r *http.Request) {
-	// homeTemplate.Execute(w, "ws://"+r.Host+"/echo")
-}
-
-func main() {
-	flag.Parse()
-	log.SetFlags(0)
-	http.HandleFunc("/echo", echo)
-	http.HandleFunc("/", home)
-	log.Fatal(http.ListenAndServe(*addr, nil))
+	fs := http.FileServer(http.Dir("../www"))
+	fs.ServeHTTP(w, r)
 }

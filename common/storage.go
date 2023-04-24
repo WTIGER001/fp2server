@@ -2,8 +2,12 @@ package common
 
 import (
 	"errors"
+	"log"
 	"os"
 	"path/filepath"
+	"strings"
+
+	"google.golang.org/protobuf/proto"
 )
 
 var Storage StorageGateway
@@ -14,6 +18,21 @@ type StorageGateway interface {
 	Put(key string, data []byte) error
 	Exists(key string) (bool, error)
 	Delete(key string) error
+}
+
+func ExtractID(key string) string {
+	p := filepath.Base(key)
+	if strings.HasSuffix(p, ".pbf") {
+		return p[:len(p)-4]
+	}
+	return p
+}
+
+func IDToFile(ID string) string {
+	if strings.HasSuffix(ID, ".pbf") {
+		return ID
+	}
+	return ID + ".pbf"
 }
 
 type LocalFSStorage struct {
@@ -73,11 +92,11 @@ type ReadOnlyStorage struct {
 }
 
 func (lfs *ReadOnlyStorage) GetAllKeys(path string) ([]string, error) {
-	return lfs.GetAllKeys(path)
+	return lfs.s.GetAllKeys(path)
 }
 
 func (lfs *ReadOnlyStorage) Get(key string) ([]byte, error) {
-	return lfs.Get(key)
+	return lfs.s.Get(key)
 }
 
 func (lfs *ReadOnlyStorage) Put(key string, data []byte) error {
@@ -85,9 +104,58 @@ func (lfs *ReadOnlyStorage) Put(key string, data []byte) error {
 }
 
 func (lfs *ReadOnlyStorage) Exists(key string) (bool, error) {
-	return lfs.Exists(key)
+	return lfs.s.Exists(key)
 }
 
 func (lfs *ReadOnlyStorage) Delete(key string) error {
 	return nil
+}
+
+func LoadFromStorage[T proto.Message](path string, item T) error {
+	data, err := Storage.Get(path)
+	if err != nil {
+		log.Printf("Error loading character  %v : %v", path, err)
+		return nil
+	}
+	err = proto.Unmarshal(data, item)
+	if err != nil {
+		log.Printf("Error parsing %v : %v", path, err)
+		return nil
+	}
+	return nil
+}
+
+func SaveToStorage[T proto.Message](path string, item T) error {
+	data, err := proto.Marshal(item)
+	if err != nil {
+		log.Printf("Error marshalling  %v : %v", path, err)
+		return nil
+	}
+	err = Storage.Put(path, data)
+	if err != nil {
+		log.Printf("Error saving %v : %v", path, err)
+		return nil
+	}
+	return nil
+}
+
+func LoadAllFromStorage[T proto.Message](path string, factory func() T) ([]T, []string, error) {
+	keys, err := Storage.GetAllKeys(path)
+	if err != nil {
+		log.Printf("Error Listing  %v : %v", path, err)
+		return nil, nil, nil
+	}
+
+	var rtn []T
+	var rtnIds []string
+	for _, key := range keys {
+		item := factory()
+		keypath := filepath.Join(path, key)
+		err = LoadFromStorage(keypath, item)
+		if err == nil {
+			rtn = append(rtn, item)
+			rtnIds = append(rtnIds, ExtractID(key))
+		}
+	}
+	return rtn, rtnIds, nil
 }

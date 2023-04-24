@@ -56,16 +56,13 @@ func TestProtoMarshall(t *testing.T) {
 	assert.Nil(t, err)
 
 	References.Weapons.Set(w4, w4.ID)
-	w5 := References.Weapons.Load(w4.ID)
+	w5, _ := References.Weapons.Load(w4.ID)
 	assert.NotNil(t, w5)
 
 }
 
 func TestReference(t *testing.T) {
 	References.LoadAll()
-
-	cntWeapons := References.Weapons.Count()
-	assert.Equal(t, 0, cntWeapons)
 
 	w := &RefWeapon{
 		ID:                 "ref-weapon-1",
@@ -84,11 +81,12 @@ func TestReference(t *testing.T) {
 		Wield2Hand:         true,
 	}
 
-	References.Weapons.Set(w, w.ID)
-
+	err := References.Weapons.Set(w, w.ID)
+	assert.Nil(t, err)
 }
 
 func TestReferenceGet(t *testing.T) {
-	w := References.Weapons.Get("ref-weapon-1")
+	w, err := References.Weapons.Get("ref-weapon-1")
 	assert.NotNil(t, w)
+	assert.Nil(t, err)
 }

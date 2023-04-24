@@ -56,7 +56,7 @@ func (cp *CombatProcessor) ResolveAttack(attack *Attack, defense *DefenseOption)
 	if attackRoll >= defenseTotal {
 		damage := RollOnce(20)
 
-		target := References.Characters.Get(attack.Target)
+		target, _ := ActiveGame.Characters().Get(attack.Target)
 		armor := target.GetArmor()
 
 		// Success
@@ -71,7 +71,7 @@ func (cp *CombatProcessor) ResolveAttack(attack *Attack, defense *DefenseOption)
 	} else if defense.DefenseType == DefenseType_Block {
 		damage := RollOnce(20)
 
-		target := References.Characters.Get(attack.Target)
+		target, _ := ActiveGame.Characters().Get(attack.Target)
 		armor := target.GetArmor()
 		shield := target.GetArmor()
 
@@ -117,14 +117,14 @@ func (cp *CombatProcessor) GetDefenseChoice(attack *Attack, options []*DefenseOp
 
 // The Defensive options for a character are based on their weapons, skills, sheilds, etc.
 func (cp *CombatProcessor) GetDefenseOptions(attack *Attack) []*DefenseOption {
-	target := References.Characters.Get(attack.Target)
+	target, _ := ActiveGame.Characters().Get(attack.Target)
 	var opts []*DefenseOption
 
 	// Handles Weapons and Shields
 	if target.Weapons != nil {
 		for _, w := range target.Weapons {
 			// Get the reference
-			wRef := References.Weapons.Get(w.RefID)
+			wRef, _ := References.Weapons.Get(w.RefID)
 
 			// Get the Skill
 			skillTotal := target.GetCurrentSkillTotal(wRef.RequiredSkill)

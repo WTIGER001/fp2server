@@ -54,7 +54,7 @@ func (c *Character) Calculate() {
 
 	// Skills
 	for _, s := range c.Skills {
-		skillRef := References.Skills.Get(s.ID)
+		skillRef, _ := References.Skills.Get(s.ID)
 		attr := skillRef.AttributeType
 		attrVal := c.GetCurentAttribute(attr)
 

@@ -3,21 +3,153 @@ package fp2;
 
 option go_package =	"github.com/wtiger001/fp2server/common";
 
+// Naming convention
+// *Request - A request sent from a client to the server
+// *Response - A response to a request
+// *Broadcast - A message initiated by the server
+// *Action - An action performed
+// *Result - The result of an action
+// Everything else is considered a model 
+
+// Top level message that is sent and recieved. 
 message Fp2Message {
     string MessageID = 1;
     string RespondingToID = 2;
     string Sender = 3;
     oneof Data {
-        Character                   Character                   = 5;
-        Attack                      Attack                      = 6;
-        AttackResult                AttackResult                = 7;
+        ErrorResponse               ErrorResponse               = 5;
+        Attack                      Attack                      = 6;    // BAD NAMING
+        AttackResult                AttackResult                = 7;    
         DefenseChallenge            DefenseChallenge            = 8;
         DefenseChallengeResponse    DefenseChallengeResponse    = 9;
-        ReferenceRequest            ReferenceRequest            = 10;
-        ReferenceResponse           ReferenceResponse           = 11;
         UpdateRequest               UpdateRequest               = 12;
+        Chat                        Chat                        = 13;   // BAD NAMING
+        ListGamesRequest            ListGamesRequest            = 14;
+        ListGamesResponse           ListGamesResponse           = 15;
+        GetActiveGameRequest        GetActiveGameRequest        = 16;
+        GetActiveGameResponse       GetActiveGameResponse       = 17;
+        ModelChangedEvent           ModelChangedEvent           = 20;   // BAD NAMING
+        GetRequest                  GetRequest                  = 21;
+        GetResponse                 GetResponse                 = 22;
+        GetAllRequest               GetAllRequest               = 23;
+        GetAllResponse              GetAllResponse              = 24;
+        ListRequest                 ListRequest                 = 25;
+        ListReponse                 ListResponse                = 26;
+        BatchUpdateRequest          BatchUpdateRequest          = 27;
+        DiceRollBroadcast           DiceRollBroadcast           = 28;
+        DiceRollResponse            DiceRollResponse            = 29;
     }
 }
+
+message ErrorResponse {
+    string  Error = 1;
+    int32   ErrorCode = 2;
+    Fp2Message ErroredMessage = 3;
+}
+
+enum ModelType {
+    ModelType_Unkown  =0;
+    ModelType_Character = 1;
+    ModelType_Weapon  = 2;
+    ModelType_Orb  = 3;
+    ModelType_Armor  = 4;
+    ModelType_Game  = 5;
+    ModelType_Player  = 6;
+
+    ModelType_RefArmor  = 50;
+    ModelType_RefGameTerm  =51;
+    ModelType_RefOrb  = 52;
+    ModelType_RefSkill  = 53;
+    ModelType_RefWeapon  = 54;
+}
+
+message GetRequest {
+    ModelType Type = 1;
+    string ID = 2;
+}
+
+message GetResponse {
+    ModelType Type = 1;
+    Model Model = 2;
+}
+
+message GetAllRequest {
+    ModelType Type = 1;
+}
+
+message GetAllResponse {
+    ModelType Type = 1;
+    repeated Model Items = 2;
+}
+
+
+message ListRequest {
+    ModelType Type = 1;
+    string filter = 2;
+}
+
+message ListReponse {
+    ModelType Type = 1;
+    string filter = 2;
+    repeated IDName Items = 3;
+}
+
+message IDName {
+    string ID = 1;
+    string Name = 2;
+}
+
+
+enum UpdateType {
+    UT_Save     = 0;
+    UT_Delete   = 1;
+}
+
+// Used to send multuple updates. Batched updates will delay the calculaiion
+// process until all updates have been saved and there will be only a single
+// update per affected object instead of possibly n updates. It is possible
+// to include the same object multiple times. In that case the last object
+// instance will be the one that gets saved. No attempt at patching with 
+// this approach
+message BatchUpdateRequest {
+    repeated UpdateRequest Updates = 2;
+}
+
+// Sent from the Client to the Server when the client has made a change
+// This may be too general, but is good for now. No attempt at patching with 
+// this approach
+message UpdateRequest {
+    UpdateType Type = 1;
+    int32 UpdateReason = 2;
+    Model Model = 3;
+}
+
+// Sent to the Client when a model has changed. This is either from 
+// a save or from a calculation. No attempt at patching with 
+// this approach
+message ModelChangedEvent {
+    UpdateType Type = 1;
+    int32 UpdateReason = 2;
+    Model Model = 3;
+}   
+
+message Model {
+    oneof Data {
+        Character Character = 1;
+        Weapon Weapon = 2;
+        Orb Orb = 3;
+        Armor Armor = 4;
+        Game Game = 5;
+        Player Player = 6;
+
+        RefArmor RefArmor = 50;
+        RefGameTerm RefGameTerm =51;
+        RefOrb RefOrb = 52;
+        RefSkill RefSkill = 53;
+        RefWeapon RefWeapon = 54;
+    }
+}
+
 
 // Represents a Character
 message Character {
@@ -32,6 +164,8 @@ message Character {
     repeated Armor Armors                       = 9;
     repeated Affinty Affinities                 = 10;
     repeated Orb Orbs                           = 11;
+    int32 ActionCount                           = 12;
+    int32 DefensiveReactions                    = 13;
 }
 
 message Affinty {
@@ -68,10 +202,6 @@ message CharacterMetadata  {
     string HairColor = 7;
 }
 
-message Game {
-    string ID = 1;
-    string Name = 2;
-}
 
 message GameSession {
     DiceRollLog DiceLog = 1;
@@ -90,11 +220,43 @@ message Encounter {
     string ID                                   = 1;
     string Name                                 = 2;
     bool Active                                 = 3;
-    int32 CurrentTurn                           = 4;
-    int32 CurrentEntity                         = 5;
+    int32 CurrentRound                          = 4;
+    int32 CurrentTurn                           = 5;
     repeated InitiativeOrder InitiativeOrders   = 6;
     repeated EntityReference Entities           = 7;
+    repeated Round Rounds                       = 8;
 }
+
+
+message Round {
+    int32 RoundNumber                               = 1;
+    repeated Turn Turns                             = 2;
+    repeated DefensiveReaction  DefensiveReactions  = 3;
+    repeated DefensiveReaction  BorrowedReactions   = 4;
+}
+
+enum TurnStatus {
+    TurnStatus_Unknown              = 0;
+    TurnStatus_Pending              = 1;
+    TurnStatus_Held                 = 2;
+    TurnStatus_Acted                = 3;
+    TurnStatus_Reacted              = 4;
+    TurnStatus_Reacted_Borrowed     = 5;
+    TurnStatus_Borrowed             = 6;
+}
+
+message Turn {
+    float Order                     = 1;
+    string CharacterId              = 2;
+    int32 Actions                   = 3;
+    TurnStatus Status               = 4;
+}
+
+message DefensiveReaction {
+    string EntityID                 = 1;
+    int32  TurnIndex                = 2; 
+}
+
 
 enum EntityType {
     EntityType_Unknown   = 0;
@@ -109,8 +271,9 @@ message EntityReference {
 }
 
 message InitiativeOrder {
-    string EntityID      = 1;
-    int32 InitiativeRoll = 3;
+    string EntityID                 = 1;
+    int32 Value                     = 3;
+    DiceRollResults DiceRollResults = 4;
 }
 
 message ChallengeDiceRoll {
@@ -444,6 +607,7 @@ message DieRollResult  {
 message DiceRoll  {
 	repeated Die Dice = 1;
     repeated RollModifier Modifiers = 2;
+    DiceRollReason Reason = 3;
 }
 
 message Die  {
@@ -476,26 +640,16 @@ message PerformAction {
     string CharacterID = 4;
 }
 
+
 enum ReferenceType {
-    ReferenceType_Unknown = 0;
-    ReferenceType_Skill = 1;
-    ReferenceType_Ability = 2;
-    ReferenceType_GameTerm = 3;
-    ReferenceType_Weapon = 4;  
-}
-
-// Message Request for a piece of reference information
-message ReferenceRequest {
-    ReferenceType Type = 1;
-    string ID = 2;
-}
-
-message ReferenceResponse {
-    oneof Reference {
-        RefSkill Skill = 1;
-        RefGameTerm GameTerm = 3;
-        RefWeapon Weapon = 4;       
-    }
+    ReferenceType_Unknown   = 0;
+    ReferenceType_Skill     = 1;
+    ReferenceType_Ability   = 2;
+    ReferenceType_GameTerm  = 3;
+    ReferenceType_Weapon    = 4;  
+    ReferenceType_Armor     = 5;  
+    ReferenceType_Gear      = 6;  
+    ReferenceType_Orb       = 7;  
 }
 
 enum ModificationType {
@@ -552,56 +706,6 @@ message Modification {
     string           IDAffected = 4;
 }
 
-enum UpdateType {
-    UT_Save     = 0;
-    UT_Delete   = 1;
-}
-
-// Used to send multuple updates. Batched updates will delay the calculaiion
-// process until all updates have been saved and there will be only a single
-// update per affected object instead of possibly n updates. It is possible
-// to include the same object multiple times. In that case the last object
-// instance will be the one that gets saved. No attempt at patching with 
-// this approach
-message BatchUpdateRequest {
-    repeated UpdateRequest Updates = 2;
-}
-
-// Sent from the Client to the Server when the client has made a change
-// This may be too general, but is good for now. No attempt at patching with 
-// this approach
-message UpdateRequest {
-    UpdateType Type = 5;
-    oneof Data {
-        // References (not meant to be uodated during a game)
-        RefArmor                    RefArmor                    = 7;
-        RefGameTerm                 RefGameTerm                 = 8;
-        RefSkill                    RefSkill                    = 9;
-        RefWeapon                   RefWeapon                   = 10;
-
-        // Entities
-        Character                   Character                   = 50;
-        Encounter                   Encounter                   = 51;
-    }
-}
-
-// Sent to the Client when a model has changed. This is either from 
-// a save or from a calculation. No attempt at patching with 
-// this approach
-message ModelChangedEvent {
-    UpdateType Type = 5;
-    oneof Data {
-        // References (not meant to be uodated during a game)
-        RefArmor                    RefArmor                    = 7;
-        RefGameTerm                 RefGameTerm                 = 8;
-        RefSkill                    RefSkill                    = 9;
-        RefWeapon                   RefWeapon                   = 10;
-
-        // Entities
-        Character                   Character                   = 50;
-        Encounter                   Encounter                   = 51;
-    }
-}
 
 
 message Orb {
@@ -631,4 +735,78 @@ message RefOrb {
     PrimaryAttributeVal SpellAttributeType = 7;
     string SpellSchool = 8;
     repeated Ability Abilities = 1100;
+}
+
+message Chat {
+    string Contents = 1;
+}
+
+message Game {
+    string ID = 1;
+    string Name = 2;
+    repeated Player Players = 3;
+
+}
+
+message Player {
+    string id = 1;
+    string name = 2;
+    bool GM = 3;
+}
+
+message ListGamesRequest {
+    bool IDNameOnly = 1;
+}
+
+message ListGamesResponse {
+    repeated Game Games = 1;
+}
+
+message StartGameRequest {
+    string ID = 1;
+}
+
+message StartGameBroadcast {
+    Game Game = 1;
+    repeated Character Characters = 4;
+    repeated Encounter Encounters = 5; 
+}
+
+message GetActiveGameRequest {
+
+}
+
+message GetActiveGameResponse {
+    Game Game = 1;
+    repeated Character Characters = 4;
+    repeated Encounter Encounters = 5; 
+}
+
+
+// Requests that dice is rolled for a player. This is meant to be
+// used when a player wants to roll their own dice. This will timeout
+// and then the server will autoroll the dice. The intenion is that
+// any one "playing" a character will be able to respond
+message DiceRollBroadcast {
+    string ID = 1;                  // The Request ID for the Roll
+    DiceRoll DiceRoll = 2;          // The dice to roll
+    string Text = 3;                // Text explaining the reason, for display
+    string ForPlayerID = 4;         // Which player should roll
+    int32 Timeout = 5;              // How many seconds until timeout
+}
+
+message DiceRollResponse {
+    DiceRollBroadcast Request = 1;    // The original Request
+    DiceRollResults Result = 2;     // The result of the dice roll
+}
+
+enum DiceRollReason {
+    DiceRollReason_Unknown          = 0;
+    DiceRollReason_Initiative       = 1;
+    DiceRollReason_Attack           = 2;
+    DiceRollReason_Defense          = 3;
+    DiceRollReason_Skill            = 4;
+    DiceRollReason_Ability          = 5;
+    DiceRollReason_Awareness        = 6;
+    DiceRollReason_Other            = 7;
 }

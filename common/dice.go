@@ -6,8 +6,40 @@ import (
 	"strings"
 )
 
+// Properly checks and records
+func Roll(dice *DiceRoll) *DiceRollResults {
+	var result *DiceRollResults
+	// Check if it needs to be asked for
+	requestManual := false
+	// If not then roll
+	if requestManual {
+		//
+	} else {
+		result = dice.Roll()
+	}
+
+	//TODO: Add to Game Log?
+
+	return result
+}
+
 func ParseDiceRoll(roll string) *DiceRoll {
 	return nil
+}
+
+func NewDieRoll(sides int32, exploding bool, reason DiceRollReason) *DiceRoll {
+	d := &DiceRoll{
+		Reason: reason,
+		Dice: []*Die{
+			{
+				Sides:   sides,
+				Amount:  1,
+				Explode: exploding,
+			},
+		},
+	}
+
+	return d
 }
 
 func RollD10() *DiceRollResults {
@@ -87,4 +119,29 @@ func (d *DiceRoll) Format() string {
 		diceFmt = fmt.Sprintf("%v - %v", diceFmt, absmods)
 	}
 	return diceFmt
+}
+
+func (d *DiceRoll) AppendMod(tag string, mod int32) {
+	d.Modifiers = append(d.Modifiers, &RollModifier{
+		Modifier: mod,
+		Tag:      tag,
+	})
+}
+
+func (d *DiceRoll) FindModifier(tag string) int32 {
+	for _, m := d.Modifiers {
+		if m.Tag == tag {
+			return m.Value
+		}
+	}
+	return 0;
+}
+
+func (d *DiceRollResults) FindModifier(tag string) int32 {
+	for _, m := d.Modifiers {
+		if m.Tag == tag {
+			return m.Value
+		}
+	}
+	return 0;
 }
