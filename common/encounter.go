@@ -4,15 +4,33 @@ import (
 	"sort"
 )
 
+func NewEncounter(characters []string, entities []*Character) *Encounter {
+	enc := &Encounter{
+		ID:            GenerateID(),
+		Active:        true,
+		Characters:    characters,
+		LocalEntities: entities,
+	}
+
+	return enc
+}
+
+func (e *Encounter) GetEntities() []*Character {
+	var all []*Character
+	for _, cid := range e.Characters {
+		all = append(all, e.GetEntity(cid))
+	}
+	all = append(all, e.LocalEntities...)
+	return all
+}
+
 // Roll the initative for an encounter. This should only be done once
 // per encounter. If you need to add or remove a person from the
 // encounter there are other methods.
 func (e *Encounter) RollInititative() {
 	// Roll the initatives
 	var orders []*InitiativeOrder
-	for _, entityRef := range e.Entities {
-		// Look up the correct entity
-		entity := e.GetEntity(e.ID)
+	for _, entity := range e.GetEntities() {
 
 		// Get the raw value
 		raw := entity.Attributes.Initiative.Value
@@ -23,7 +41,7 @@ func (e *Encounter) RollInititative() {
 		result := Roll(dice)
 
 		orders = append(orders, &InitiativeOrder{
-			EntityID:        entityRef.ID,
+			EntityID:        entity.ID,
 			Value:           result.Total,
 			DiceRollResults: result,
 		})
@@ -86,7 +104,17 @@ func InitativeOrderLess(o1 *InitiativeOrder, o2 *InitiativeOrder) bool {
 
 func (e *Encounter) GetEntity(id string) *Character {
 	entity, _ := ActiveGame.Characters().Get(id)
-	return entity
+	if entity != nil {
+		return entity
+	}
+
+	for _, ent := range e.LocalEntities {
+		if ent.ID == id {
+			return ent
+		}
+	}
+
+	return nil
 }
 
 // BuildNextRound builds out the action order
@@ -117,7 +145,7 @@ func (e *Encounter) BuildNextRound() {
 				// Calculate the order. This is the raw initiative, decremented
 				// by SupsequentInitativeActionPenalty (3) and then, so things sort
 				// correctly add the index order / 10 (as a decimal palce)
-				Order: float32(raw-(action*SupsequentInitativeActionPenalty)) + float32(i/10.0),
+				Order: float32(raw-(action*SupsequentInitativeActionPenalty)) + (float32(i) / float32(10.0)),
 
 				// Set the default action to just be a single
 				Actions: 1,
@@ -128,6 +156,11 @@ func (e *Encounter) BuildNextRound() {
 			round.Turns = append(round.Turns, turn)
 		}
 	}
+
+	// Now sort
+	sort.Slice(round.Turns, func(i, j int) bool {
+		return TurnOrderLess(round.Turns[i], round.Turns[j])
+	})
 
 	// The inital order is calculated. Now check for any borrowed actions in
 	// the preivous round
@@ -144,6 +177,17 @@ func (e *Encounter) BuildNextRound() {
 
 	// Now add the round
 	e.Rounds = append(e.Rounds, round)
+}
+
+func TurnOrderLess(o1 *Turn, o2 *Turn) bool {
+	if o1.Order > o2.Order {
+		return true
+	}
+	if o1.Order < o2.Order {
+		return false
+	}
+
+	return false
 }
 
 // Remove all effects that are expired.
@@ -224,18 +268,17 @@ func (e *Encounter) NextRound() {
 	e.ExpireEffects()
 	e.CurrentRound = int32(len(e.Rounds) - 1)
 	e.CurrentTurn = -1 // Not Started
-	e.NextTurn()
 }
 
 // Advances to the next active turn
-func (e *Encounter) NextTurn() {
+func (e *Encounter) NextTurn() bool {
 	if e.CurrentTurn == 999 {
 		// Cannot advance until a new round
-		return
+		return false
 	}
 	// Stupid checks
 	if len(e.InitiativeOrders) == 0 {
-		return
+		return false
 	}
 	if len(e.Rounds) == 0 {
 		e.BuildNextRound()
@@ -248,9 +291,9 @@ func (e *Encounter) NextTurn() {
 	nextTurnIndex := e.CurrentTurn + 1
 	if len(round.Turns) >= int(nextTurnIndex) {
 		// TIme to make a new turn
-		e.CurrentTurn = 99
+		e.CurrentTurn = 999
 		// Wait for someone to manually advance the round
-		return
+		return false
 	}
 	e.CurrentTurn = nextTurnIndex
 
@@ -263,21 +306,23 @@ func (e *Encounter) NextTurn() {
 	switch turn.Status {
 	case TurnStatus_TurnStatus_Acted:
 		// UMM Error, this should only occur AFTER
+		return false
 	case TurnStatus_TurnStatus_Borrowed:
 		// Skip, dont care about this
-		e.NextTurn()
+		return e.NextTurn()
 	case TurnStatus_TurnStatus_Held:
 		// UMM Error, this should only occur AFTER
 	case TurnStatus_TurnStatus_Pending:
 		// On a GOOD State
-		return
+		return true
 	case TurnStatus_TurnStatus_Reacted:
 		// Skip, dont care about this
-		e.NextTurn()
+		return e.NextTurn()
 	case TurnStatus_TurnStatus_Reacted_Borrowed:
 		// Skip, dont care about this
-		e.NextTurn()
+		return e.NextTurn()
 	}
+	return false
 }
 
 // FindNextPending finds the next pending turn for an entity

@@ -2,6 +2,33 @@ package common
 
 type TestUtil struct{}
 
+func NewTestUtil() *TestUtil {
+	tu := &TestUtil{}
+	tu.Init()
+	return tu
+}
+
+func (tu *TestUtil) Teardown() {
+	original := Storage.(*ReadOnlyStorage).s
+	Storage = original
+}
+
+func (tu *TestUtil) Init() {
+	Storage = &ReadOnlyStorage{s: Storage}
+
+	g1 := &Game{
+		ID:   "my-cool-game",
+		Name: "TEST",
+		Players: []*Player{
+			{Id: "john", Name: "John", GM: true},
+			{Id: "par", Name: "Par Soulati"},
+			{Id: "tim", Name: "tim"},
+		},
+	}
+	ActiveGame = g1
+	Games.Set(g1, g1.ID)
+}
+
 func (tu *TestUtil) BreastPlate() *Armor {
 	a := &RefArmor{
 		ID:         "breastplate",
@@ -132,4 +159,18 @@ func (tu *TestUtil) Attributes(val int32) *CharacterAttributes {
 			CalcValue: val,
 		},
 	}
+}
+
+func (tu *TestUtil) CharacterMelee(attrs int32) *Character {
+	c1 := &Character{
+		ID:         GenerateID(),
+		Attributes: tu.Attributes(attrs),
+		Weapons:    []*Weapon{tu.Sword()},
+		Skills:     []*Skill{tu.BladedWeaponsSkill()},
+		Armors:     []*Armor{tu.BreastPlate()},
+	}
+
+	ActiveGame.Characters().Set(c1, c1.ID)
+	c1.Calculate()
+	return c1
 }

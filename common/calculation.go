@@ -62,4 +62,15 @@ func (c *Character) Calculate() {
 		s.Total = s.Level + s.Mod + attrVal
 	}
 
+	// Calculate Derived
+	if c.Attributes.Initiative == nil {
+		c.Attributes.Initiative = &CalculatedValue{}
+	}
+	if c.Attributes.Awarness == nil {
+		c.Attributes.Awarness = &CalculatedValue{}
+	}
+	c.Attributes.Initiative.Value = c.Attributes.PER.CalcValue + mods[ModificationType_MT_Initiative][""]
+	c.Attributes.Awarness.Value = c.Attributes.PER.CalcValue + mods[ModificationType_MT_Awarness][""]
+	c.ActionCount = DefaultActions + mods[ModificationType_MT_Actions][""]
+	c.DefensiveReactions = DefaultDefensiveReactions + mods[ModificationType_MT_DefensiveReactions][""]
 }

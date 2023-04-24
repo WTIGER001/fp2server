@@ -7,38 +7,11 @@ import (
 )
 
 func TestAttack1(t *testing.T) {
-	tu := &TestUtil{}
-	Storage = &ReadOnlyStorage{s: Storage}
+	tu := NewTestUtil()
+	defer tu.Teardown()
 
-	g1 := &Game{
-		ID:   "my-cool-game",
-		Name: "TEST",
-		Players: []*Player{
-			{Id: "john", Name: "John", GM: true},
-			{Id: "par", Name: "Par Soulati"},
-			{Id: "tim", Name: "tim"},
-		},
-	}
-	ActiveGame = g1
-
-	c1 := &Character{
-		ID:         GenerateID(),
-		Attributes: tu.Attributes(7),
-		Weapons:    []*Weapon{tu.Sword()},
-		Skills:     []*Skill{tu.BladedWeaponsSkill()},
-		Armors:     []*Armor{tu.BreastPlate()},
-	}
-	c2 := &Character{
-		ID:         GenerateID(),
-		Attributes: tu.Attributes(10),
-		Weapons:    []*Weapon{tu.Sword()},
-		Skills:     []*Skill{tu.BladedWeaponsSkill()},
-		Armors:     []*Armor{tu.BreastPlate()},
-	}
-
-	Games.Set(g1, g1.ID)
-	g1.Characters().Set(c1, c1.ID)
-	g1.Characters().Set(c2, c2.ID)
+	c1 := tu.CharacterMelee(7)
+	c2 := tu.CharacterMelee(10)
 
 	cp := &CombatProcessor{}
 	attack := &Attack{

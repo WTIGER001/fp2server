@@ -166,6 +166,7 @@ message Character {
     repeated Orb Orbs                           = 11;
     int32 ActionCount                           = 12;
     int32 DefensiveReactions                    = 13;
+    repeated Modification ManualModifications   = 14;
 }
 
 message Affinty {
@@ -223,8 +224,9 @@ message Encounter {
     int32 CurrentRound                          = 4;
     int32 CurrentTurn                           = 5;
     repeated InitiativeOrder InitiativeOrders   = 6;
-    repeated EntityReference Entities           = 7;
+    repeated string Characters                  = 7;
     repeated Round Rounds                       = 8;
+    repeated Character LocalEntities            = 9;
 }
 
 
@@ -243,6 +245,7 @@ enum TurnStatus {
     TurnStatus_Reacted              = 4;
     TurnStatus_Reacted_Borrowed     = 5;
     TurnStatus_Borrowed             = 6;
+    TurnStatus_UnableToAct          = 7;
 }
 
 message Turn {
@@ -696,6 +699,9 @@ enum ModificationType {
     MT_Initiative_Temp = 36;
     MT_Awarness_Temp = 37;
 
+    MT_Actions = 38;
+    MT_DefensiveReactions = 39;
+
     MT_Skill = 50;
 }
 
@@ -706,7 +712,11 @@ message Modification {
     string           IDAffected = 4;
 }
 
-
+message Effect {
+    Modification Modification   = 1;
+    string       Reason         = 2;
+    string       Expires        = 3;
+}
 
 message Orb {
     string ID = 1;

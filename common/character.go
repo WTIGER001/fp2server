@@ -19,6 +19,9 @@ func (c *Character) UseSkill(ID string) int32 {
 }
 
 func (c *Character) GetWoundState() WoundState {
+	if c.Health == nil {
+		c.InitHealth()
+	}
 	if c.Health.CurrentWounds == 0 {
 		return WoundState_WoundState_None
 	}
