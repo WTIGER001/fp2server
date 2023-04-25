@@ -34,10 +34,10 @@ func (cp *CombatProcessor) OnAttack(attack *Attack) {
 */
 func (cp *CombatProcessor) ResolveAttack(attack *Attack, defense *DefenseOption) *AttackResult {
 	// Roll Attack
-	attackRoll := RollOnce(10)
+	attackRoll := RollOnce(10, true)
 
 	// Roll Defense
-	defenseRoll := RollOnce(10)
+	defenseRoll := RollOnce(10, true)
 	defenseTotal := defenseRoll + defense.DefenseTotal
 	dr := AttackMeleeDR
 	if defenseTotal < dr {
@@ -54,7 +54,7 @@ func (cp *CombatProcessor) ResolveAttack(attack *Attack, defense *DefenseOption)
 
 	// Resolve
 	if attackRoll >= defenseTotal {
-		damage := RollOnce(20)
+		damage := RollOnce(10, true)
 
 		target, _ := ActiveGame.Characters().Get(attack.Target)
 		armor := target.GetArmor()
@@ -69,7 +69,7 @@ func (cp *CombatProcessor) ResolveAttack(attack *Attack, defense *DefenseOption)
 			result.DamageInflicted = inflicted
 		}
 	} else if defense.DefenseType == DefenseType_Block {
-		damage := RollOnce(20)
+		damage := RollOnce(10, true)
 
 		target, _ := ActiveGame.Characters().Get(attack.Target)
 		armor := target.GetArmor()

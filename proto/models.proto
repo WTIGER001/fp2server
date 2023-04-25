@@ -167,6 +167,7 @@ message Character {
     int32 ActionCount                           = 12;
     int32 DefensiveReactions                    = 13;
     repeated Modification ManualModifications   = 14;
+    bool ManualRoll                             = 15;
 }
 
 message Affinty {
@@ -227,8 +228,8 @@ message Encounter {
     repeated string Characters                  = 7;
     repeated Round Rounds                       = 8;
     repeated Character LocalEntities            = 9;
+    int64 StartTime                             = 10;
 }
-
 
 message Round {
     int32 RoundNumber                               = 1;
@@ -249,7 +250,7 @@ enum TurnStatus {
 }
 
 message Turn {
-    float Order                     = 1;
+    double Order                    = 1;
     string CharacterId              = 2;
     int32 Actions                   = 3;
     TurnStatus Status               = 4;
@@ -608,9 +609,10 @@ message DieRollResult  {
 }
 
 message DiceRoll  {
-	repeated Die Dice = 1;
+	repeated Die Dice               = 1;
     repeated RollModifier Modifiers = 2;
-    DiceRollReason Reason = 3;
+    DiceRollReason Reason           = 3;
+    string EntityID                 = 4;
 }
 
 message Die  {
@@ -619,6 +621,7 @@ message Die  {
 	bool Explode   = 3;
 	bool ReRollMin = 4;
 	string Tag     = 5;
+    bool Negative  = 6;
 }
 
 message RollModifier  {
@@ -755,6 +758,7 @@ message Game {
     string ID = 1;
     string Name = 2;
     repeated Player Players = 3;
+    int64 GameTime = 4;
 
 }
 

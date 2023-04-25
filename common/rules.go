@@ -6,6 +6,7 @@ const SupsequentInitativeActionPenalty = 3
 const DefaultDefensiveReactions = 1
 const DefaultActions = 3
 const AllowBorrowedReactions = 1
+const SecondsPerRound = 6
 
 var InitiativeDice = NewDieRoll(10, true, DiceRollReason_DiceRollReason_Initiative)
 

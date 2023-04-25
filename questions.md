@@ -1,0 +1,2 @@
+- How do I keep the common package issolated but still allow the common methods to request rolls
+  - Maybe Just have a "RemoteRoller"

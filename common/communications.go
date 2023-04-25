@@ -5,8 +5,35 @@ import (
 	"sync"
 )
 
+type Interactions interface {
+	// Request a Dice Roll
+	Roll(dice *DiceRoll) *DiceRollResults
+}
+
+var RemoteInteractions Interactions
+var PlayerInteractions Interactions = &PlayerInteractionManager{}
+
+type PlayerInteractionManager struct {
+}
+
+func (pim *PlayerInteractionManager) Roll(dice *DiceRoll) *DiceRollResults {
+	// Get the character that has to roll
+	character, _ := ActiveGame.Characters().Get(dice.EntityID)
+	if character != nil && character.ManualRoll {
+		roll := RemoteInteractions.Roll(dice)
+		if roll != nil {
+			return roll
+		}
+	}
+
+	// No roll or timeout
+	roll := dice.Roll()
+	return roll
+}
+
 type MessageBus interface {
 	Send(ctx context.Context, message *Fp2Message) error
+	Broadcast(ctx context.Context, message *Fp2Message) error
 	RegisterHandler(h MessageHandler)
 	UnregisterHandler(h MessageHandler)
 }
@@ -53,7 +80,7 @@ func prepMessage(m *Fp2Message) {
 	m.Sender = "_SERVER_"
 }
 
-//Sends out a message
+// Sends out a message
 func SendAndWait(ctx context.Context, m *Fp2Message) *Fp2Message {
 	prepMessage(m)
 

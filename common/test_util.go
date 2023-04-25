@@ -1,6 +1,9 @@
 package common
 
-type TestUtil struct{}
+type TestUtil struct {
+}
+
+var testCharacterNames = []string{"Ragnar", "Legolas", "Invanndel", "Bob", "Samsunite", "Martharius"}
 
 func NewTestUtil() *TestUtil {
 	tu := &TestUtil{}
@@ -168,6 +171,7 @@ func (tu *TestUtil) CharacterMelee(attrs int32) *Character {
 		Weapons:    []*Weapon{tu.Sword()},
 		Skills:     []*Skill{tu.BladedWeaponsSkill()},
 		Armors:     []*Armor{tu.BreastPlate()},
+		Name:       testCharacterNames[ActiveGame.Characters().Count()],
 	}
 
 	ActiveGame.Characters().Set(c1, c1.ID)

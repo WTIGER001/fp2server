@@ -1,7 +1,11 @@
 package common
 
 import (
+	"fmt"
+	"log"
 	"sort"
+
+	"github.com/alexeyco/simpletable"
 )
 
 func NewEncounter(characters []string, entities []*Character) *Encounter {
@@ -145,7 +149,7 @@ func (e *Encounter) BuildNextRound() {
 				// Calculate the order. This is the raw initiative, decremented
 				// by SupsequentInitativeActionPenalty (3) and then, so things sort
 				// correctly add the index order / 10 (as a decimal palce)
-				Order: float32(raw-(action*SupsequentInitativeActionPenalty)) + (float32(i) / float32(10.0)),
+				Order: float64(raw-(action*SupsequentInitativeActionPenalty)) + (float64(10000-i-1) / float64(10000)),
 
 				// Set the default action to just be a single
 				Actions: 1,
@@ -256,18 +260,28 @@ func (e *Encounter) GetRound() *Round {
 	return e.Rounds[len(e.Rounds)-1]
 }
 
+func (e *Encounter) GetTurn() *Turn {
+	r := e.GetRound()
+	if r != nil {
+		return r.GetTurns()[e.CurrentTurn]
+	}
+	return nil
+}
+
 // Advances the round to the next round. This will generate
 // the next turn order, clear any status effects and go to the
 // first real turn
-func (e *Encounter) NextRound() {
+func (e *Encounter) NextRound() *Round {
 	if len(e.InitiativeOrders) == 0 {
 		// MAYBE Raise an error here?
-		return
+		return nil
 	}
 	e.BuildNextRound()
 	e.ExpireEffects()
 	e.CurrentRound = int32(len(e.Rounds) - 1)
 	e.CurrentTurn = -1 // Not Started
+
+	return e.GetRound()
 }
 
 // Advances to the next active turn
@@ -289,7 +303,7 @@ func (e *Encounter) NextTurn() bool {
 
 	// See if this was the LAST Turn
 	nextTurnIndex := e.CurrentTurn + 1
-	if len(round.Turns) >= int(nextTurnIndex) {
+	if int(nextTurnIndex) >= len(round.Turns) {
 		// TIme to make a new turn
 		e.CurrentTurn = 999
 		// Wait for someone to manually advance the round
@@ -345,4 +359,47 @@ func (e *Encounter) RemoveEntities(toRemove []*EntityReference) {
 
 func (e *Encounter) ApplyStatusConditons() {
 
+}
+
+func (e *Encounter) DebugPrintInitiativeOrder() {
+	table := simpletable.New()
+	table.Header = &simpletable.Header{
+		Cells: []*simpletable.Cell{
+			{Align: simpletable.AlignLeft, Text: "Name"},
+			{Align: simpletable.AlignLeft, Text: "Dice"},
+			{Align: simpletable.AlignRight, Text: "Value"},
+		},
+	}
+	for _, o := range e.InitiativeOrders {
+		r := []*simpletable.Cell{
+			{Text: e.GetEntity(o.EntityID).Name},
+			{Text: o.DiceRollResults.Format()},
+			{Text: fmt.Sprintf("%v", o.Value)},
+		}
+		table.Body.Cells = append(table.Body.Cells, r)
+	}
+	fmt.Println(table.String())
+}
+
+func (e *Encounter) DebugPrintRound(r *Round) {
+	log.Printf("Round: %v", r.RoundNumber)
+
+	table := simpletable.New()
+	table.Header = &simpletable.Header{
+		Cells: []*simpletable.Cell{
+			{Align: simpletable.AlignRight, Text: "Order"},
+			{Align: simpletable.AlignLeft, Text: "Name"},
+			{Align: simpletable.AlignLeft, Text: "Status"},
+		},
+	}
+
+	for _, turn := range r.Turns {
+		r := []*simpletable.Cell{
+			{Text: fmt.Sprintf("%11.9v", turn.Order)},
+			{Text: e.GetEntity(turn.CharacterId).Name},
+			{Text: turn.Status.String()},
+		}
+		table.Body.Cells = append(table.Body.Cells, r)
+	}
+	fmt.Println(table.String())
 }
