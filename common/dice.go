@@ -201,14 +201,14 @@ func parseDiceExpression(exp string) *DiceRoll {
 
 		if dStr == "" {
 			toParse := strings.ReplaceAll(strings.ReplaceAll(all, " ", ""), "+", "")
-			mod, _ := strconv.Atoi(toParse)
+			mod, _ := strconv.ParseInt(toParse, 10, 32)
 			roll.addModifier("", int32(mod))
 		} else {
-			numberOfDice := 1
+			numberOfDice := int64(1)
 			if len(quantStr) > 0 {
-				numberOfDice, _ = strconv.Atoi(quantStr)
+				numberOfDice, _ = strconv.ParseInt(quantStr, 10, 32)
 			}
-			faces, _ := strconv.Atoi(facesStr)
+			faces, _ := strconv.ParseInt(facesStr, 10, 32)
 			isNegative := plusMinus == "-"
 			isExploding := len(xStr) > 0
 			roll.Dice = append(roll.Dice, &Die{
