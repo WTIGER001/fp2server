@@ -603,9 +603,10 @@ message DiceRollResult  {
 }
 
 message DieRollResult  {
-	int32  Value    = 1;
-	bool Exploded = 2;
-	bool ReRolled = 3;
+	int32  Value                = 1;    // Total value of the roll
+	bool Exploded               = 2;    // If this roll was exploded
+	bool ReRolled               = 3;    // If the roll was rerolled
+    repeated int32 DieValues    = 4;    // Individual Die Values, only more than 1 on exploded, or Advantage
 }
 
 message DiceRoll  {
