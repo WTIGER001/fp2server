@@ -33,6 +33,7 @@ func NewMessageProcessor() *MessageProcessor {
 	mp.handlers = []MessageHandler{
 		&CrudMessageHandler{},
 		&ChatMessageHandler{},
+		&GameMessageHandler{},
 	}
 	return mp
 }

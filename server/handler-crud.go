@@ -13,7 +13,7 @@ func (mh *CrudMessageHandler) Handle(m *common.Fp2Message) {
 	case *common.Fp2Message_GetRequest:
 		mh.OnGet(m)
 	case *common.Fp2Message_GetAllRequest:
-
+		mh.OnGetAll(m)
 	case *common.Fp2Message_ListRequest:
 
 	case *common.Fp2Message_UpdateRequest:
@@ -139,6 +139,9 @@ func ModelUpdate(modelType common.ModelType, id string) (interface{}, error) {
 		return nil, nil
 	case common.ModelType_ModelType_Player:
 		return nil, nil
+
+	case common.ModelType_ModelType_Picture:
+
 	case common.ModelType_ModelType_RefArmor:
 		return common.References.Armors.Get(id)
 	case common.ModelType_ModelType_RefGameTerm:
@@ -247,6 +250,10 @@ func (mh *CrudMessageHandler) Update(r *common.UpdateRequest) (*common.Model, er
 		// Do Nothing
 	case *common.Model_Player:
 		// Do Nothing
+	case *common.Model_Picture:
+		item := r.Model.GetPicture()
+		err := common.Pictures.Set(item)
+		return nil, err
 	case *common.Model_RefArmor:
 		item := r.Model.GetRefArmor()
 		err := common.References.Armors.Set(item, item.ID)
@@ -289,6 +296,9 @@ func (mh *CrudMessageHandler) Delete(r *common.UpdateRequest) error {
 		// Do Nothing
 	case *common.Model_Player:
 		// Do Nothing
+	case *common.Model_Picture:
+		item := r.Model.GetPicture()
+		common.Pictures.Delete(item)
 	case *common.Model_RefArmor:
 		item := r.Model.GetRefArmor()
 		return common.References.Armors.Delete(item.ID)

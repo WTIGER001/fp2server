@@ -38,6 +38,9 @@ message Fp2Message {
         BatchUpdateRequest          BatchUpdateRequest          = 27;
         DiceRollBroadcast           DiceRollBroadcast           = 28;
         DiceRollResponse            DiceRollResponse            = 29;
+        SetActiveGameRequest        SetActiveGameRequest        = 30;
+        GetPictureRequest           GetPictureRequest           = 31;
+        GetPictureResponse          GetPictureResponse          = 32;
     }
 }
 
@@ -55,6 +58,7 @@ enum ModelType {
     ModelType_Armor  = 4;
     ModelType_Game  = 5;
     ModelType_Player  = 6;
+    ModelType_Picture  = 7;
 
     ModelType_RefArmor  = 50;
     ModelType_RefGameTerm  =51;
@@ -99,6 +103,16 @@ message IDName {
     string Name = 2;
 }
 
+message GetPictureRequest {
+    string ID = 1;
+    ModelType Type = 2;
+    string GameID = 3;
+    string Tag = 4;
+}
+
+message GetPictureResponse {
+    Picture Picture = 1;
+}
 
 enum UpdateType {
     UT_Save     = 0;
@@ -141,6 +155,7 @@ message Model {
         Armor Armor = 4;
         Game Game = 5;
         Player Player = 6;
+        Picture Picture = 7;
 
         RefArmor RefArmor = 50;
         RefGameTerm RefGameTerm =51;
@@ -168,11 +183,20 @@ message Character {
     int32 DefensiveReactions                    = 13;
     repeated Modification ManualModifications   = 14;
     bool ManualRoll                             = 15;
+    string Token                                = 16;
 }
 
 message Affinty {
     string School = 1;
     int32 Points = 2;
+}
+
+message Picture {
+    string ID = 1;
+    ModelType Type = 2;
+    string GameID = 3;
+    string Tag = 4;
+    string Data = 99;
 }
 
 enum AttributeAllocationMethod {
@@ -793,10 +817,14 @@ message GetActiveGameRequest {
 
 message GetActiveGameResponse {
     Game Game = 1;
+    repeated Player Players = 2;
     repeated Character Characters = 4;
     repeated Encounter Encounters = 5; 
 }
 
+message SetActiveGameRequest {
+    string ID = 1;
+}
 
 // Requests that dice is rolled for a player. This is meant to be
 // used when a player wants to roll their own dice. This will timeout

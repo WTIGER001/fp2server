@@ -69,4 +69,9 @@
 - Gear 
 - Orbs
 - Skills
-- 
+
+
+## Dice
+- Add Tags `1d10+5[Weapon Accuracy]`
+- Add "Advantage" / "Disadvantage" `1d20A` or `1d20D`
+-  
