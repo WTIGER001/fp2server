@@ -28,6 +28,8 @@ message Fp2Message {
         ListGamesResponse           ListGamesResponse           = 15;
         GetActiveGameRequest        GetActiveGameRequest        = 16;
         GetActiveGameResponse       GetActiveGameResponse       = 17;
+        ModelDeleteRequest          ModelDeleteRequest          = 18;
+        ModelDeletedEvent           ModelDeletedEvent           = 19;
         ModelChangedEvent           ModelChangedEvent           = 20;   // BAD NAMING
         GetRequest                  GetRequest                  = 21;
         GetResponse                 GetResponse                 = 22;
@@ -41,6 +43,7 @@ message Fp2Message {
         SetActiveGameRequest        SetActiveGameRequest        = 30;
         GetPictureRequest           GetPictureRequest           = 31;
         GetPictureResponse          GetPictureResponse          = 32;
+
     }
 }
 
@@ -133,19 +136,31 @@ message BatchUpdateRequest {
 // This may be too general, but is good for now. No attempt at patching with 
 // this approach
 message UpdateRequest {
-    UpdateType Type = 1;
+    ModelType Type = 1;
     int32 UpdateReason = 2;
     Model Model = 3;
+}
+
+message ModelDeleteRequest {
+    ModelType Type = 1;
+    string ID = 2;
+    string Reason = 3;
 }
 
 // Sent to the Client when a model has changed. This is either from 
 // a save or from a calculation. No attempt at patching with 
 // this approach
 message ModelChangedEvent {
-    UpdateType Type = 1;
+    ModelType Type = 1;
     int32 UpdateReason = 2;
     Model Model = 3;
 }   
+
+message ModelDeletedEvent {
+    ModelType Type = 1;
+    string ID = 2;
+    string Reason = 3;
+}
 
 message Model {
     oneof Data {
@@ -165,6 +180,12 @@ message Model {
     }
 }
 
+enum CharacterType {
+    CharacterType_Unknown = 0;
+    CharacterType_PC = 1;
+    CharacterType_NPC = 2;
+    CharacterType_Creature = 3;
+}
 
 // Represents a Character
 message Character {
@@ -184,6 +205,8 @@ message Character {
     repeated Modification ManualModifications   = 14;
     bool ManualRoll                             = 15;
     string Token                                = 16;
+    string GameID                               = 17;
+    CharacterType CharacterType                 = 18;
 }
 
 message Affinty {
@@ -336,6 +359,7 @@ enum PrimaryAttributeVal {
     PrimaryAttributeVal_ATTR  = 8;
     PrimaryAttributeVal_ESS =  9;
     PrimaryAttributeVal_PER =  10;
+    PrimaryAttributeVal_EMP =  11;
 }
 
 message CharacterAttributes {
@@ -349,12 +373,13 @@ message CharacterAttributes {
     PrimaryAttribute ATTR = 8;
     PrimaryAttribute ESS = 9;
     PrimaryAttribute PER = 10;
+    PrimaryAttribute EMP = 11;
    
-    ConsumableAttribute Mana = 11;
-    ConsumableAttribute Stamina = 12;
+    ConsumableAttribute Mana = 12;
+    ConsumableAttribute Stamina = 13;
 
-    CalculatedValue Initiative = 13;
-    CalculatedValue Awarness = 14;
+    CalculatedValue Initiative = 14;
+    CalculatedValue Awarness = 15;
 }
 
 message PrimaryAttribute {

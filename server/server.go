@@ -19,7 +19,9 @@ func main() {
 }
 
 var mp *MessageProcessor
-var addr = flag.String("addr", "localhost:8080", "http service address")
+
+// var addr = flag.String("addr", "localhost:8080", "http service address")
+var addr = flag.String("addr", "0.0.0.0:8080", "http service address")
 
 type Fp2Server struct {
 }

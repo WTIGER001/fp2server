@@ -114,8 +114,6 @@ func ModelGetAll(modelType common.ModelType) ([]*common.Model, error) {
 			return nil, err
 		}
 		return common.ToModels(items), err
-		models := common.ToModels(items)
-		return models, err
 	case common.ModelType_ModelType_Weapon:
 		return nil, nil
 	case common.ModelType_ModelType_Unkown:
@@ -207,13 +205,6 @@ func (mh *CrudMessageHandler) OnUpdate(m *common.Fp2Message) {
 	var modelRtn *common.Model
 	var err error
 	request := m.GetUpdateRequest()
-	switch request.Type {
-	case common.UpdateType_UT_Save:
-		modelRtn, err = mh.Update(request)
-	case common.UpdateType_UT_Delete:
-		err = mh.Delete(request)
-	}
-
 	if err != nil {
 		SendError(err, m)
 		return
@@ -228,6 +219,30 @@ func (mh *CrudMessageHandler) OnUpdate(m *common.Fp2Message) {
 				Type:         request.Type,
 				UpdateReason: request.UpdateReason,
 				Model:        modelRtn,
+			},
+		},
+	})
+}
+
+func (mh *CrudMessageHandler) OnDelete(m *common.Fp2Message) {
+	var err error
+	request := m.GetModelDeleteRequest()
+	err = mh.Delete(request)
+
+	if err != nil {
+		SendError(err, m)
+		return
+	}
+
+	// Send Response
+	mp.Broadcast(&common.Fp2Message{
+		MessageID:      common.GenerateID(),
+		RespondingToID: m.MessageID,
+		Data: &common.Fp2Message_ModelDeletedEvent{
+			ModelDeletedEvent: &common.ModelDeletedEvent{
+				Type:   request.Type,
+				ID:     request.ID,
+				Reason: request.Reason,
 			},
 		},
 	})
@@ -280,41 +295,33 @@ func (mh *CrudMessageHandler) Update(r *common.UpdateRequest) (*common.Model, er
 	return nil, nil
 }
 
-func (mh *CrudMessageHandler) Delete(r *common.UpdateRequest) error {
-	switch r.Model.Data.(type) {
-	case *common.Model_Armor:
+func (mh *CrudMessageHandler) Delete(r *common.ModelDeleteRequest) error {
+	switch r.Type {
+	case common.ModelType_ModelType_Armor:
 		// Do nothing
-	case *common.Model_Character:
+	case common.ModelType_ModelType_Character:
 		if common.ActiveGame != nil {
-			item := r.Model.GetCharacter()
-			return common.ActiveGame.Characters().Delete(item.ID)
+			return common.ActiveGame.Characters().Delete(r.ID)
 		}
-	case *common.Model_Game:
-		item := r.Model.GetGame()
-		return common.Games.Delete(item.ID)
-	case *common.Model_Orb:
+	case common.ModelType_ModelType_Game:
+		return common.Games.Delete(r.ID)
+	case common.ModelType_ModelType_Orb:
 		// Do Nothing
-	case *common.Model_Player:
+	case common.ModelType_ModelType_Player:
 		// Do Nothing
-	case *common.Model_Picture:
-		item := r.Model.GetPicture()
-		common.Pictures.Delete(item)
-	case *common.Model_RefArmor:
-		item := r.Model.GetRefArmor()
-		return common.References.Armors.Delete(item.ID)
-	case *common.Model_RefGameTerm:
-		item := r.Model.GetRefGameTerm()
-		return common.References.GameTerms.Delete(item.ID)
-	case *common.Model_RefOrb:
-		item := r.Model.GetRefOrb()
-		return common.References.Orbs.Delete(item.ID)
-	case *common.Model_RefSkill:
-		item := r.Model.GetRefSkill()
-		return common.References.Skills.Delete(item.ID)
-	case *common.Model_RefWeapon:
-		item := r.Model.GetRefWeapon()
-		return common.References.Weapons.Delete(item.ID)
-	case *common.Model_Weapon:
+	case common.ModelType_ModelType_Picture:
+		// common.Pictures.Delete(r.ID)
+	case common.ModelType_ModelType_RefArmor:
+		return common.References.Armors.Delete(r.ID)
+	case common.ModelType_ModelType_RefGameTerm:
+		return common.References.GameTerms.Delete(r.ID)
+	case common.ModelType_ModelType_RefOrb:
+		return common.References.Orbs.Delete(r.ID)
+	case common.ModelType_ModelType_RefSkill:
+		return common.References.Skills.Delete(r.ID)
+	case common.ModelType_ModelType_RefWeapon:
+		return common.References.Weapons.Delete(r.ID)
+	case common.ModelType_ModelType_Unkown:
 		// Do Nothing
 	}
 	return nil

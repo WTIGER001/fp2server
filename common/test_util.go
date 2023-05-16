@@ -7,13 +7,17 @@ var testCharacterNames = []string{"Ragnar", "Legolas", "Invanndel", "Bob", "Sams
 
 func NewTestUtil() *TestUtil {
 	tu := &TestUtil{}
-	tu.Init()
+
 	return tu
 }
 
 func (tu *TestUtil) Teardown() {
 	original := Storage.(*ReadOnlyStorage).s
 	Storage = original
+}
+
+func (tu *TestUtil) InitInMemStorage() {
+	Storage = newInMemoryStorage()
 }
 
 func (tu *TestUtil) Init() {

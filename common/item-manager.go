@@ -18,6 +18,7 @@ type ItemManager[T proto.Message] struct {
 	factory func() T
 	path    string
 	cache   Cache[T]
+	onSave  func(item T) error
 }
 
 func (im *ItemManager[T]) Count() int {
@@ -72,6 +73,13 @@ func (im *ItemManager[T]) LoadAll() ([]T, []string, error) {
 }
 
 func (im *ItemManager[T]) Save(item T, id string) error {
+	if im.onSave != nil {
+		err := im.onSave(item)
+		if err != nil {
+			return err
+		}
+	}
+
 	key := IDToFile(id)
 	path := filepath.Join(im.path, key)
 	return SaveToStorage(path, item)

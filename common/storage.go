@@ -87,6 +87,48 @@ func (lfs *LocalFSStorage) Delete(key string) error {
 	return os.Remove(path)
 }
 
+type InMemoryStorage struct {
+	data map[string][]byte
+}
+
+func newInMemoryStorage() *InMemoryStorage {
+	return &InMemoryStorage{
+		data: make(map[string][]byte),
+	}
+}
+
+func (lfs *InMemoryStorage) GetAllKeys(path string) ([]string, error) {
+
+	var keys []string
+	for k := range lfs.data {
+		if strings.HasPrefix(k, path) {
+			cut := k[len(path)+1:]
+			keys = append(keys, cut)
+		}
+	}
+	return keys, nil
+}
+
+func (lfs *InMemoryStorage) Get(key string) ([]byte, error) {
+	a, _ := lfs.data[key]
+	return a, nil
+}
+
+func (lfs *InMemoryStorage) Put(key string, data []byte) error {
+	lfs.data[key] = data
+	return nil
+}
+
+func (lfs *InMemoryStorage) Exists(key string) (bool, error) {
+	_, exists := lfs.data[key]
+	return exists, nil
+}
+
+func (lfs *InMemoryStorage) Delete(key string) error {
+	delete(lfs.data, key)
+	return nil
+}
+
 type ReadOnlyStorage struct {
 	s StorageGateway
 }

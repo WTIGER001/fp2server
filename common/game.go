@@ -34,6 +34,10 @@ func (g *Game) Characters() *ItemManager[*Character] {
 		factory: CharacterFactory,
 		path:    filepath.Join("games", g.ID, "characters"),
 		cache:   NewCache[*Character](),
+		onSave: func(item *Character) error {
+			item.GameID = g.ID
+			return nil
+		},
 	}
 	gameCharacters[g.ID] = im
 	return im
